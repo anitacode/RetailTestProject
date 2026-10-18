@@ -21,11 +21,11 @@ There is no single "correct" solution — but there are many poor ones. We want 
 
 ## Setup
 
-This app is a standard Rails 7.1 / Ruby 3.2 project backed by PostgreSQL.
+This app is a standard Rails 7.1 / Ruby 3.4 project backed by PostgreSQL.
 
 ### Prerequisites
 
-- **Ruby**: `3.2.2`
+- **Ruby**: `3.4.11`
 - **Rails**: `~> 7.1.6`
 - **PostgreSQL**: 13+ recommended
 
@@ -33,11 +33,11 @@ You can use **rbenv**, **rvm**, or **asdf** to install the correct Ruby version.
 
 #### Installing Ruby with rbenv
 ```bash
-# Install Ruby 3.2.2
-rbenv install 3.2.2
+# Install Ruby 3.4.11
+rbenv install 3.4.11
 
 # Set it locally for this project
-rbenv local 3.2.2
+rbenv local 3.4.11
 ```
 
 ### Installation
@@ -51,6 +51,15 @@ bin/rails db:migrate
 bin/rails db:seed
 ```
 
+### Running tests
+
+Configure `DB_USER`, `DB_PASSWORD`, `DB_HOST`, and `DB_PORT` in the git-ignored `.env.test.local` file. Dotenv does not load `.env.local` in the test environment. The test database defaults to `retail_test_project_rails_test`; override it with `DB_TEST_NAME` only for a separate test database. The configured PostgreSQL role must own that database and have `CREATEDB`, because Rails recreates it when preparing the test schema.
+
+```bash
+RAILS_ENV=test bin/rails db:prepare
+bin/rails test
+```
+
 ### Importing Tracking Events
 
 To import the million-row CSV file:
@@ -58,11 +67,35 @@ To import the million-row CSV file:
 bin/rails tracking_events:import
 ```
 
+The command first counts CSV records, then displays a progress bar with processed,
+staged, and skipped row counts, plus elapsed seconds (including the counting pass).
+The display updates after each batch and on completion. Inserts run in batches of 10,000 inside one transaction;
+100% is displayed after the transaction succeeds. If the import fails, its changes
+are rolled back. Rows with missing stores or products are skipped.
+The progress display adapts to terminal width, using fewer details in narrow
+windows so updates stay on a single line.
+
 ## Objectives
 
 ### First Objective: Price Tracking
 
 Currently, the system only tracks if inventory is present via `TrackingEvent`. We want to add a way to track price. An inventory check and price check are separate and can occur without the other happening.
+
+Tracking events use event-specific JSON in `value`:
+
+- `inventory_presence`: `{ "present": false }` (requires a JSON boolean; both `true` and `false` are valid).
+- `price_tracker`: `{ "amount": 12.50, "currency": "USD" }` (requires a nonnegative JSON number and a three-letter uppercase currency code).
+
+Rails validations and PostgreSQL check constraints enforce these rules, including for bulk inserts. Currency validation checks the code format, not membership in an ISO currency registry. Payloads have no default: callers must supply an observation. The payload migration converts legacy boolean inventory values and fails atomically if existing records cannot meet the constraints; it does not invent missing observations or prices. This data conversion is irreversible through `db:rollback`.
+
+Retrieve the current observations independently for a store/product pair:
+
+```ruby
+inventory = TrackingEvent.latest_inventory(store_id: store.id, product_id: product.id)
+price = TrackingEvent.latest_price(store_id: store.id, product_id: product.id)
+```
+
+Each lookup returns an event or `nil` and filters by its own event category. Results are ordered by `event_time DESC, id DESC`: an older observation imported later cannot replace a newer one, and the greater ID breaks ties at identical observation times. Undated events remain in history but are excluded from current observations. A B-tree index on `(store_id, product_id, event_type, event_time DESC, id DESC)` supports these lookups; they do not search JSON contents and need no GIN index.
 
 ### Second Objective: Alert System
 
@@ -74,7 +107,7 @@ Improve the app's overall performance. This can be done as you work on the first
 
 ## Technology Stack
 
-- **Ruby**: 3.2.2
+- **Ruby**: 3.4.11
 - **Rails**: 7.1.6
 - **Database**: PostgreSQL 13+
 

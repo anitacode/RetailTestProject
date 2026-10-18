@@ -21,7 +21,11 @@ default: &default
 
 development:
   <<: *default
-  database: retail_test_project_development
+  database: <%= ENV["DB_NAME"].to_json %>
+  username: <%= ENV["DB_USER"].to_json %>
+  password: <%= ENV["DB_PASSWORD"].to_json %>
+  host: <%= ENV["DB_HOST"].to_json %>
+  port: <%= ENV["DB_PORT"].to_json %>
 
   # The specified database role being used to connect to PostgreSQL.
   # To create additional roles in PostgreSQL see `$ createuser --help`.
@@ -55,7 +59,11 @@ development:
 # Do not set this db to the same as development or production.
 test:
   <<: *default
-  database: retail_test_project_test
+  database: <%= ENV.fetch("DB_TEST_NAME", "retail_test_project_rails_test").to_json %>
+  username: <%= ENV["DB_USER"].to_json %>
+  password: <%= ENV["DB_PASSWORD"].to_json %>
+  host: <%= ENV["DB_HOST"].to_json %>
+  port: <%= ENV["DB_PORT"].to_json %>
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is
@@ -81,4 +89,4 @@ production:
   <<: *default
   database: retail_test_project_production
   username: retail_test_project
-  password: <%= ENV["RETAIL_TEST_PROJECT_DATABASE_PASSWORD"] %>
+  password: <%= ENV["DB_PASSWORD"] %>

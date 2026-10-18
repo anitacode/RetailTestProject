@@ -1,6 +1,9 @@
 source "https://rubygems.org"
 
-ruby "3.2.2"
+ruby "3.4.11"
+
+# Load local environment files, including when running production locally.
+gem "dotenv-rails", "~> 3.1"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 7.1.6"
@@ -10,6 +13,9 @@ gem "sprockets-rails"
 
 # Use postgresql as the database for Active Record
 gem "pg", "~> 1.1"
+
+# CSV is a bundled gem in Ruby 3.4 and must be declared for the importer.
+gem "csv", "~> 3.3"
 
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", ">= 5.0"

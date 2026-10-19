@@ -4,6 +4,15 @@ module TrackingEvents
   class CsvImporter
     BATCH_SIZE = 1_500
 
+    class InvalidRow < StandardError
+      attr_reader :record_number
+
+      def initialize(record_number, reason)
+        @record_number = record_number
+        super("CSV record #{record_number}: #{reason}")
+      end
+    end
+
     def initialize(path)
       @path = path
     end
@@ -14,24 +23,32 @@ module TrackingEvents
 
       TrackingEvent.transaction(requires_new: true) do
         CSV.foreach(@path, headers: true).each_slice(BATCH_SIZE) do |rows|
-          row_count += rows.length
           store_ids = ids_by(Store, :address, rows.map { |row| row["Address"] })
-          product_ids = ids_by(Product, :name, rows.map { |row| row["Product Name"] })
+          product_matches = products_by_name(rows.map { |row| row["Product Name"] })
 
           events = []
-          rows.each do |row|
+          rows.each_with_index do |row, index|
+            # Count CSV records including the header, not physical lines: quoted
+            # fields may contain newlines.
+            record_number = row_count + index + 2
             store_id = store_ids[row["Address"]]
-            product_id = product_ids[row["Product Name"]]
-            break if !store_id || !product_id
+            product_id, match_count = product_matches[row["Product Name"]]
+            raise InvalidRow.new(record_number, "store not found for Address #{row['Address'].inspect}") unless store_id
+            raise InvalidRow.new(record_number, "product not found for Product Name #{row['Product Name'].inspect}") unless product_id
+            if match_count > 1
+              raise InvalidRow.new(record_number,
+                                   "Product Name #{row['Product Name'].inspect} matches #{match_count} products; cannot choose a product without a unique identifier")
+            end
 
-            quantity = row.headers.include?("Quantity") ? Integer(row["Quantity"], 10) : (cast_boolean(row["Inventory Present"]) ? 1 : 0)
+            quantity = parse_quantity(row, record_number)
+            event_time = parse_date(row["Date"], record_number)
             inventory_present = quantity > 0
 
             events << {
               event_type: "inventory_presence",
               store_id:,
               product_id:,
-              event_time: Date.parse(row["Date"]),
+              event_time:,
               inventory_present:,
               value: { quantity: quantity }
             }
@@ -41,9 +58,13 @@ module TrackingEvents
             TrackingEvent.insert_all!(events, record_timestamps: true, returning: false)
           end
           created_count += events.length
+          row_count += rows.length
 
           yield(processed: row_count, inserted: created_count) if block_given?
         end
+        # Bulk writes bypass callbacks. Queue one reconciliation in the same
+        # database transaction; workers cannot see it until the import commits.
+        Alerts::ReconcileJob.perform_later if created_count.positive?
       end
 
       Rails.logger.info "[TrackingEvents::CsvImporter] rows processed=#{row_count} created=#{created_count}"
@@ -51,6 +72,26 @@ module TrackingEvents
     end
 
     private
+
+    def products_by_name(names)
+      # Aggregate in PostgreSQL to keep one lookup per batch and avoid loading
+      # every matching product. The ID is used only when the count is one.
+      Product.where(name: names.uniq).group(:name)
+             .pluck(:name, Arel.sql("MIN(id)"), Arel.sql("COUNT(*)"))
+             .to_h { |name, id, count| [name, [id, count]] }
+    end
+
+    def parse_quantity(row, record_number)
+      row.headers.include?("Quantity") ? Integer(row["Quantity"], 10) : (cast_boolean(row["Inventory Present"]) ? 1 : 0)
+    rescue ArgumentError, TypeError
+      raise InvalidRow.new(record_number, "Quantity must be a whole number; got #{row['Quantity'].inspect}")
+    end
+
+    def parse_date(value, record_number)
+      Date.parse(value)
+    rescue ArgumentError, TypeError
+      raise InvalidRow.new(record_number, "invalid Date #{value.inspect}")
+    end
 
     def ids_by(model, column, values)
       # For demo purposes :)

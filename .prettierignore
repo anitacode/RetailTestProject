@@ -1,0 +1,10 @@
+README.md
+**/*.md
+node_modules/
+public/
+vendor/
+tmp/
+log/
+.agents/
+.codex/
+package-lock.json

@@ -16,6 +16,8 @@ gem "pg", "~> 1.1"
 
 # CSV is a bundled gem in Ruby 3.4 and must be declared for the importer.
 gem "csv", "~> 3.3"
+# Rails 7.1 passes JSON options removed in JSON 3.
+gem "json", "~> 2.0"
 gem "pastel", "~> 0.8"
 
 # Use the Puma web server [https://github.com/puma/puma]
@@ -43,7 +45,7 @@ gem "jbuilder"
 # gem "bcrypt", "~> 3.1.7"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
-gem "tzinfo-data", platforms: %i[ windows jruby ]
+gem "tzinfo-data", platforms: %i[windows jruby]
 
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
@@ -54,7 +56,7 @@ gem "bootsnap", require: false
 group :development, :test do
   gem "brakeman", "~> 7.0", require: false
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
-  gem "debug", platforms: %i[ mri windows ]
+  gem "debug", platforms: %i[mri windows]
 end
 
 group :development do
@@ -73,3 +75,9 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
 end
+
+gem "pundit", "~> 2.5"
+
+gem "rubocop", "~> 1.0", :groups => [:development, :test]
+
+gem "good_job", "~> 4.0"

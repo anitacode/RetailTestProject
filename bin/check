@@ -22,6 +22,9 @@ end
 puts "Ruby syntax passed."
 
 failures = []
+run_check(failures, "npm", "run", "format:check")
+run_check(failures, "npm", "test")
+run_check(failures, "npm", "run", "build")
 run_check(failures, "bundle", "exec", "brakeman", "--no-pager", "--quiet")
 # Unlike db:prepare, these tasks do not seed a newly created database.
 if run_check(failures, "bin/rails", "db:create", "db:migrate")

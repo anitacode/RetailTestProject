@@ -128,15 +128,15 @@ module TrackingEvents
 
       filled = percent * width / 100
       bar = if @interactive
-        # Eighth-width blocks make each 1% increment visible at the normal width.
-        units = percent * width * 8 / 100
-        full, fraction = units.divmod(8)
-        partial = PARTIAL_BLOCKS[fraction]
-        empty = width - full - (fraction.zero? ? 0 : 1)
-        "#{PASTEL.on_blue(' ' * full)}#{PASTEL.blue(partial)}#{' ' * empty}"
-      else
-        "#{'=' * filled}#{' ' * (width - filled)}"
-      end
+              # Eighth-width blocks make each 1% increment visible at the normal width.
+              units = percent * width * 8 / 100
+              full, fraction = units.divmod(8)
+              partial = PARTIAL_BLOCKS[fraction]
+              empty = width - full - (fraction.zero? ? 0 : 1)
+              "#{PASTEL.on_blue(' ' * full)}#{PASTEL.blue(partial)}#{' ' * empty}"
+            else
+              "#{'=' * filled}#{' ' * (width - filled)}"
+            end
       line = "#{bar}#{suffix}"
       if @interactive
         @output.print "\r\e[2K#{line}"

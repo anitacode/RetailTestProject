@@ -5,7 +5,7 @@ description: Implement or change large Rails file imports, streaming parsers, bu
 
 # Rails bulk imports
 
-Read `AGENTS.md`, `TrackingEvents::CsvImporter`, its task, progress renderer, constraints, and importer tests. The current importer streams CSV batches inside one transaction; it has no durable resume checkpoint or event-deduplication key. Its missing-reference behavior stops the remainder of a batch. Do not silently change these semantics while optimizing.
+Read `AGENTS.md`, `TrackingEvents::CsvImporter`, its task, progress renderer, constraints, and importer tests. The current importer streams CSV batches inside one transaction; it has no durable resume checkpoint or event-deduplication key. Missing references and detected invalid row values raise an error with a CSV record number and roll back the entire import. Do not silently change these semantics while optimizing.
 
 1. Define supported headers, encoding, malformed-row policy, reference lookup rules, and duplicate semantics. The current `Quantity` column takes precedence; legacy presence maps to placeholder 1/0. Consult current code for batch size instead of historical README values.
 2. Stream records with bounded batches and bulk reference lookups. Avoid loading the whole file or issuing per-row queries. Count CSV records, not physical lines, when embedded newlines are possible.

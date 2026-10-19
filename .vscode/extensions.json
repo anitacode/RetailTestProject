@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "rubocop.vscode-rubocop",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss"
+  ]
+}

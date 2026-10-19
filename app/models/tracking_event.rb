@@ -8,6 +8,7 @@ class TrackingEvent < ApplicationRecord
   belongs_to :store
 
   validate :payload_matches_event_type
+  after_create :enqueue_notifications
 
   scope :latest_observation_first, -> { where.not(event_time: nil).reorder(event_time: :desc, id: :desc) }
 
@@ -25,6 +26,16 @@ class TrackingEvent < ApplicationRecord
 
   private
 
+  def enqueue_notifications
+    return unless alert_eligible? && event_time
+
+    # GoodJob shares this PostgreSQL transaction; workers see the job only after commit.
+    Alerts::ReconcileJob.perform_later(store_id: store_id, product_id: product_id)
+    if price_tracker?
+      Notifications::DispatchJob.perform_later("alert_price_change", id)
+    end
+  end
+
   def payload_matches_event_type
     unless value.is_a?(Hash)
       errors.add(:value, "must be an object")
@@ -34,7 +45,7 @@ class TrackingEvent < ApplicationRecord
     if inventory_presence?
       quantity = value["quantity"]
       whole_number = (quantity.is_a?(Integer) || quantity.is_a?(Float) || quantity.is_a?(BigDecimal)) &&
-        quantity.finite? && quantity == quantity.to_i
+                     quantity.finite? && quantity == quantity.to_i
       errors.add(:value, "must include a finite whole-number quantity") unless whole_number
       errors.add(:value, "must not include present; stock status is derived from quantity") if value.key?("present")
     elsif price_tracker?

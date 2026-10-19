@@ -1,3 +1,4 @@
 class Brand < ApplicationRecord
-    has_many :products
+  has_many :contacts, dependent: :destroy
+  has_many :products
 end

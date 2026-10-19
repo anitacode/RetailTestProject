@@ -14,6 +14,14 @@ ENV RAILS_ENV="production" \
     BUNDLE_WITHOUT="development"
 
 
+FROM node:24-slim AS frontend-build
+WORKDIR /frontend
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY vite.config.ts tsconfig.json ./
+COPY frontend ./frontend
+RUN npm run build
+
 # Throw-away build stage to reduce size of final image
 FROM base as build
 
@@ -29,6 +37,7 @@ RUN bundle install && \
 
 # Copy application code
 COPY . .
+COPY --from=frontend-build /frontend/public/alerts-ui /rails/public/alerts-ui
 
 # Precompile bootsnap code for faster boot times
 RUN bundle exec bootsnap precompile app/ lib/

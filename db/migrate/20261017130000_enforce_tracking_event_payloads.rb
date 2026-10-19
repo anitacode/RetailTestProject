@@ -14,7 +14,7 @@ class EnforceTrackingEventPayloads < ActiveRecord::Migration[7.1]
     SQL
 
     add_check_constraint :tracking_events, "jsonb_typeof(value) = 'object'",
-      name: "tracking_events_value_structure"
+                         name: "tracking_events_value_structure"
     # IS TRUE rejects missing keys as well as JSON null (CHECK otherwise accepts SQL NULL).
     add_check_constraint :tracking_events, <<~SQL.squish, name: "tracking_events_inventory_payload"
       event_type <> 'inventory_presence' OR

@@ -19,6 +19,8 @@ namespace :tracking_events do
     begin
       total = counting.with_animation { CSV.foreach(path, headers: true).count }
       counting.finish_counting
+    rescue CSV::MalformedCSVError => error
+      abort "Invalid CSV: #{error.message}. No records were imported."
     ensure
       counting.end_line
     end
@@ -35,6 +37,9 @@ namespace :tracking_events do
           progress.update(**counts)
         end
       end
+    rescue TrackingEvents::CsvImporter::InvalidRow => error
+      progress.fail
+      abort error.message
     rescue StandardError
       progress.fail
       raise

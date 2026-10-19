@@ -55,9 +55,9 @@ class LatestTrackingObservationTest < ActiveSupport::TestCase
     inventory = observe(:inventory_presence, @time, { quantity: 0 })
     price = observe(:price_tracker, @time, { amount: 12, currency: "USD" })
     TrackingEvent.insert_all!([
-      attributes(:inventory_presence, @time - 1, { quantity: 1 }),
-      attributes(:price_tracker, @time - 1, { amount: 99, currency: "USD" })
-    ])
+                                attributes(:inventory_presence, @time - 1, { quantity: 1 }),
+                                attributes(:price_tracker, @time - 1, { amount: 99, currency: "USD" })
+                              ])
 
     assert_equal inventory, latest_inventory
     assert_equal price, latest_price

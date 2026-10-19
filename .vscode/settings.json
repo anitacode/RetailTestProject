@@ -1,0 +1,62 @@
+{
+  "editor.formatOnSaveMode": "file",
+  "rubocop.mode": "enableViaGemfile",
+  "rubocop.autocorrect": true,
+  "rubocop.safeAutocorrect": true,
+  "rubocop.layoutMode": true,
+  "prettier.requireConfig": true,
+  "files.associations": {
+    "Gemfile": "ruby",
+    "Rakefile": "ruby",
+    "*.rake": "ruby",
+    "*.ru": "ruby",
+    "bin/check": "ruby",
+    "bin/rails": "ruby",
+    "bin/rake": "ruby",
+    "bin/setup": "ruby"
+  },
+  "[ruby]": {
+    "editor.defaultFormatter": "rubocop.vscode-rubocop",
+    "editor.formatOnSave": true
+  },
+  "[markdown]": {
+    "editor.formatOnSave": false,
+    "files.trimTrailingWhitespace": false,
+    "files.insertFinalNewline": false,
+    "files.trimFinalNewlines": false
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "javascript.preferences.importModuleSpecifier": "non-relative"
+}

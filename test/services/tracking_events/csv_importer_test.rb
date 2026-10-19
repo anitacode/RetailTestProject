@@ -2,6 +2,8 @@ require "test_helper"
 require "tempfile"
 
 class TrackingEvents::CsvImporterTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   self.fixture_table_names = []
   parallelize(workers: 1)
 
@@ -9,6 +11,19 @@ class TrackingEvents::CsvImporterTest < ActiveSupport::TestCase
     @store = Store.create!(address: "Importer test address")
     @brand = Brand.create!(name: "Importer test brand")
     @product = Product.create!(name: "Importer test product", brand: @brand)
+  end
+
+  test "imports alert only on new observations without backfilling historical pairs" do
+    2.times do |index|
+      TrackingEvent.create!(store: @store, product: @product, alert_eligible: false,
+                            event_time: Date.new(2024, 1, index + 1), value: { quantity: 0 })
+    end
+    import([row(inventory: "False")])
+    assert_equal 0, Alert.count
+    import([row(inventory: "False", date: "2025-01-03")])
+    assert_equal 1, Alert.count
+    assert Alert.first.previous_event.alert_eligible?
+    assert Alert.first.triggering_event.alert_eligible?
   end
 
   test "imports full batches and the final partial batch with bounded queries" do
@@ -39,7 +54,7 @@ class TrackingEvents::CsvImporterTest < ActiveSupport::TestCase
     end
     assert_equal [true] * 6 + [false] * 3, TrackingEvent.order(:id).pluck(:inventory_present)
     assert_equal ([true] * 6 + [false] * 3).map { |value| { "quantity" => (value ? 1 : 0) } },
-      TrackingEvent.order(:id).pluck(:value)
+                 TrackingEvent.order(:id).pluck(:value)
   end
 
   test "all 10000 distinct rows retain their store product date and inventory values" do
@@ -48,27 +63,51 @@ class TrackingEvents::CsvImporterTest < ActiveSupport::TestCase
     assert_import_matches(rows, expected)
   end
 
-  test "missing references stop each batch while preserving previously collected events" do
-    rows, expected = distinct_rows(batch_size + 2)
-    retained_dates = rows.first(batch_size - 1).map { |values| Date.parse(values[2]) }
-    expected = expected.slice(*retained_dates)
-    # A missing reference ends each batch, including the next batch's first row.
-    rows.insert(batch_size - 1, row(address: "Missing", date: "invalid"))
-    rows.insert(batch_size, row(product: "Missing", date: "invalid"))
-
-    assert_import_matches(rows, expected)
+  test "missing references roll back earlier batches and preserve existing events" do
+    existing = TrackingEvent.create!(store: @store, product: @product, value: { quantity: 9 })
+    [{ address: "Missing" }, { product: "Missing" }].each do |invalid|
+      updates = []
+      rows = Array.new(batch_size) { row } + [row(**invalid), row]
+      assert_no_difference "TrackingEvent.count" do
+        error = assert_raises(TrackingEvents::CsvImporter::InvalidRow) do
+          import(rows) { |counts| updates << counts }
+        end
+        assert_equal batch_size + 2, error.record_number
+        assert_includes error.message, "not found"
+        assert_includes error.message, "Missing"
+      end
+      assert_equal [existing.id], TrackingEvent.pluck(:id)
+      assert_equal [{ processed: batch_size, inserted: batch_size }], updates
+    end
   end
 
-  test "empty files and batches with no matching references create no events" do
+  test "missing reference within the first batch rejects all rows" do
     assert_no_difference "TrackingEvent.count" do
-      import([])
-      import(Array.new(batch_size) { row(product: "Missing") })
+      error = assert_raises(TrackingEvents::CsvImporter::InvalidRow) do
+        import([row, row(product: "Missing"), row])
+      end
+      assert_equal 3, error.record_number
+      assert_includes error.message, "product not found"
     end
+  end
+
+  test "empty files create no events" do
+    assert_no_difference("TrackingEvent.count") { import([]) }
+  end
+
+  test "record numbers count quoted multiline fields as one CSV record" do
+    @store.update!(address: "First line\nSecond line")
+    error = assert_raises(TrackingEvents::CsvImporter::InvalidRow) do
+      import([row, row(product: "Missing")])
+    end
+    assert_equal 3, error.record_number
   end
 
   test "an invalid date fails before inserting the current batch" do
     assert_no_difference "TrackingEvent.count" do
-      assert_raises(Date::Error) { import([row, row(date: "invalid")]) }
+      error = assert_raises(TrackingEvents::CsvImporter::InvalidRow) { import([row, row(date: "invalid")]) }
+      assert_equal 3, error.record_number
+      assert_includes error.message, 'invalid Date "invalid"'
     end
   end
 
@@ -77,7 +116,7 @@ class TrackingEvents::CsvImporterTest < ActiveSupport::TestCase
     rows = Array.new(batch_size) { row } + [row(date: "invalid")]
 
     assert_no_difference "TrackingEvent.count" do
-      assert_raises(Date::Error) { import(rows) }
+      assert_raises(TrackingEvents::CsvImporter::InvalidRow) { import(rows) }
     end
     assert_equal [existing.id], TrackingEvent.pluck(:id)
   end
@@ -85,7 +124,7 @@ class TrackingEvents::CsvImporterTest < ActiveSupport::TestCase
   test "a database error in a later batch rolls back the entire import" do
     # This constraint exists only within this test's transaction.
     TrackingEvent.connection.add_check_constraint :tracking_events,
-      "inventory_present IS TRUE", name: "importer_test_inventory_required"
+                                                  "inventory_present IS TRUE", name: "importer_test_inventory_required"
     rows = Array.new(batch_size) { row } + [row(inventory: "False")]
 
     assert_no_difference "TrackingEvent.count" do
@@ -94,17 +133,17 @@ class TrackingEvents::CsvImporterTest < ActiveSupport::TestCase
     end
   end
 
-  test "reports cumulative progress including skipped batches and final partial batches" do
+  test "reports cumulative staged progress across full and partial batches" do
     updates = []
-    rows = Array.new(batch_size) { row } + Array.new(batch_size) { row(product: "Missing") } + [row]
+    rows = Array.new(batch_size * 2) { row } + [row]
     result = import(rows) { |counts| updates << counts }
 
     assert_equal [
       { processed: batch_size, inserted: batch_size },
-      { processed: batch_size * 2, inserted: batch_size },
-      { processed: batch_size * 2 + 1, inserted: batch_size + 1 }
+      { processed: batch_size * 2, inserted: batch_size * 2 },
+      { processed: batch_size * 2 + 1, inserted: batch_size * 2 + 1 }
     ], updates
-    assert_equal({ processed: batch_size * 2 + 1, inserted: batch_size + 1 }, result)
+    assert_equal({ processed: batch_size * 2 + 1, inserted: batch_size * 2 + 1 }, result)
   end
 
   test "empty import returns zero totals without batch updates" do
@@ -141,9 +180,52 @@ class TrackingEvents::CsvImporterTest < ActiveSupport::TestCase
       file.write(CSV.generate_line(row + ["1.5"]))
       file.flush
       assert_no_difference "TrackingEvent.count" do
-        assert_raises(ArgumentError) { TrackingEvents::CsvImporter.new(file.path).call }
+        error = assert_raises(TrackingEvents::CsvImporter::InvalidRow) { TrackingEvents::CsvImporter.new(file.path).call }
+        assert_equal 2, error.record_number
+        assert_includes error.message, "Quantity must be a whole number"
       end
     end
+  end
+
+  test "two or more products with the same name reject the import" do
+    [2, 3].each do |count|
+      name = "Ambiguous name #{count}"
+      count.times do |index|
+        brand = Brand.create!(name: "Ambiguous brand #{count}-#{index}")
+        Product.create!(name: name, brand: brand)
+      end
+
+      assert_no_difference "TrackingEvent.count" do
+        error = assert_raises(TrackingEvents::CsvImporter::InvalidRow) do
+          import([row, row(product: name)])
+        end
+        assert_equal 3, error.record_number
+        assert_includes error.message, name
+        assert_includes error.message, "matches #{count} products"
+      end
+    end
+  end
+
+  test "ambiguous product in a later batch rolls back earlier inserts" do
+    other_brand = Brand.create!(name: "Other brand")
+    Product.create!(name: @product.name, brand: other_brand)
+    unique_product = Product.create!(name: "Unambiguous product", brand: @brand)
+    existing = TrackingEvent.create!(store: @store, product: unique_product, value: { quantity: 7 })
+    rows = Array.new(batch_size) { row(product: unique_product.name) } + [row]
+
+    assert_no_difference "TrackingEvent.count" do
+      error = assert_raises(TrackingEvents::CsvImporter::InvalidRow) { import(rows) }
+      assert_equal batch_size + 2, error.record_number
+      assert_includes error.message, "matches 2 products"
+    end
+    assert_equal [existing.id], TrackingEvent.pluck(:id)
+  end
+
+  test "duplicate product names not referenced by the CSV do not block an import" do
+    other_brand = Brand.create!(name: "Unrelated brand")
+    [@brand, other_brand].each { |brand| Product.create!(name: "Unrelated duplicate", brand: brand) }
+    assert_difference("TrackingEvent.count", 1) { import([row]) }
+    assert_equal @product.id, TrackingEvent.last.product_id
   end
 
   private
@@ -195,7 +277,9 @@ class TrackingEvents::CsvImporterTest < ActiveSupport::TestCase
       file.write(CSV.generate_line(["Address", "Product Name", "Date", "Inventory Present"]))
       rows.each { |values| file.write(CSV.generate_line(values)) }
       file.flush
-      TrackingEvents::CsvImporter.new(file.path).call(&progress)
+      result = TrackingEvents::CsvImporter.new(file.path).call(&progress)
+      perform_enqueued_jobs(only: Alerts::ReconcileJob)
+      result
     end
   end
 end

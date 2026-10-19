@@ -1,0 +1,48 @@
+{
+  "name": "retail-alerts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently --kill-others --names rails,vite,jobs \"bin/rails server -b 127.0.0.1 -p 3000\" \"npm run dev:web\" \"npm run jobs\"",
+    "build": "npm run typecheck && vite build",
+    "test": "vitest run",
+    "format": "npm run format:ruby && npm run format:web",
+    "format:check": "npm run format:ruby:check && npm run format:web:check",
+    "format:ruby": "bundle exec rubocop --fix-layout",
+    "format:ruby:check": "bundle exec rubocop",
+    "format:web": "prettier --write \"frontend/**/*.{ts,tsx,css,html}\" \"app/javascript/**/*.js\" vite.config.ts tsconfig.json package.json .prettierrc.json",
+    "format:web:check": "prettier --check \"frontend/**/*.{ts,tsx,css,html}\" \"app/javascript/**/*.js\" vite.config.ts tsconfig.json package.json .prettierrc.json",
+    "dev:all": "npm run dev",
+    "dev:web": "vite",
+    "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch",
+    "jobs": "bundle exec good_job start"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.104.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "concurrently": "10.0.6",
+    "jsdom": "^30.1.3",
+    "prettier": "3.9.10",
+    "prettier-plugin-tailwindcss": "0.8.1",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}

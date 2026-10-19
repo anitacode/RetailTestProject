@@ -1,0 +1,28 @@
+AllCops:
+  TargetRubyVersion: 3.4
+  DisabledByDefault: true
+  CacheRootDirectory: tmp/rubocop_cache
+  Include:
+    - '**/*.rb'
+    - '**/*.rake'
+    - Gemfile
+    - Rakefile
+    - config.ru
+    - bin/check
+    - bin/rails
+    - bin/rake
+    - bin/setup
+  Exclude:
+    - db/schema.rb
+    - node_modules/**/*
+    - vendor/**/*
+    - tmp/**/*
+    - .agents/**/*
+    - .git/**/*
+
+Layout:
+  Enabled: true
+
+# Long SQL, URLs, and test descriptions are clearer without forced wrapping.
+Layout/LineLength:
+  Enabled: false

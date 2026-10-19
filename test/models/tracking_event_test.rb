@@ -49,7 +49,7 @@ class TrackingEventTest < ActiveSupport::TestCase
       event = TrackingEvent.create!(store: @store, product: @product, value: { quantity: quantity })
       assert_equal quantity > 0, event.reload.in_stock?
       TrackingEvent.insert_all!([{ store_id: @store.id, product_id: @product.id,
-        event_type: "inventory_presence", value: { quantity: quantity } }])
+                                   event_type: "inventory_presence", value: { quantity: quantity } }])
     end
   end
 
@@ -65,7 +65,7 @@ class TrackingEventTest < ActiveSupport::TestCase
   test "prices accept zero and positive numeric amounts" do
     [0, 12, 12.5].each do |amount|
       event = TrackingEvent.create!(store: @store, product: @product,
-        event_type: :price_tracker, value: { amount: amount, currency: "USD" })
+                                    event_type: :price_tracker, value: { amount: amount, currency: "USD" })
       assert_equal amount, event.reload.value["amount"]
     end
   end
@@ -84,9 +84,9 @@ class TrackingEventTest < ActiveSupport::TestCase
 
   test "bulk inserts accept zero inventory and price" do
     TrackingEvent.insert_all!([
-      { store_id: @store.id, product_id: @product.id, event_type: "inventory_presence", value: { quantity: 0 } },
-      { store_id: @store.id, product_id: @product.id, event_type: "price_tracker", value: { amount: 0, currency: "USD" } }
-    ])
+                                { store_id: @store.id, product_id: @product.id, event_type: "inventory_presence", value: { quantity: 0 } },
+                                { store_id: @store.id, product_id: @product.id, event_type: "price_tracker", value: { amount: 0, currency: "USD" } }
+                              ])
     assert_equal 0, TrackingEvent.inventory_presence.last.value["quantity"]
     assert_equal 0, TrackingEvent.price_tracker.last.value["amount"]
   end

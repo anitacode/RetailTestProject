@@ -47,8 +47,8 @@ class ConsoleWatcherTest < ActiveSupport::TestCase
     drain
     observe(:price_tracker, { amount: 12.0, currency: "USD" }, @time + 1)
     TrackingEvent.insert_all!([
-      { store_id: @store.id, product_id: @product.id, event_type: "price_tracker", event_time: @time - 1, value: { amount: 99, currency: "USD" } }
-    ])
+                                { store_id: @store.id, product_id: @product.id, event_type: "price_tracker", event_time: @time - 1, value: { amount: 99, currency: "USD" } }
+                              ])
     observe(:inventory_presence, { quantity: 1 }, nil)
     @watcher.poll
     assert_equal "", drain

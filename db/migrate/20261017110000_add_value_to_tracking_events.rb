@@ -1,7 +1,7 @@
 class AddValueToTrackingEvents < ActiveRecord::Migration[7.1]
   def up
     add_column :tracking_events, :value, :jsonb,
-      default: { "type" => "null", "value" => nil }, null: false
+               default: { "type" => "null", "value" => nil }, null: false
 
     execute <<~SQL
       UPDATE tracking_events

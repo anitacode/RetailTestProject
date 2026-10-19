@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_17_140000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_18_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -51,7 +51,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_17_140000) do
     t.index ["product_id"], name: "index_tracking_events_on_product_id"
     t.index ["store_id", "product_id", "event_type", "event_time", "id"], name: "index_tracking_events_on_latest_observation", order: { event_time: :desc, id: :desc }
     t.index ["store_id"], name: "index_tracking_events_on_store_id"
-    t.check_constraint "event_type <> 'inventory_presence'::tracking_event_type OR (jsonb_typeof(value -> 'present'::text) = 'boolean'::text) IS TRUE", name: "tracking_events_inventory_payload"
+    t.check_constraint "event_type <> 'inventory_presence'::tracking_event_type OR (NOT value ? 'present'::text AND\nCASE\n    WHEN jsonb_typeof(value -> 'quantity'::text) = 'number'::text THEN ((value ->> 'quantity'::text)::numeric) = trunc((value ->> 'quantity'::text)::numeric)\n    ELSE false\nEND) IS TRUE", name: "tracking_events_inventory_quantity"
     t.check_constraint "event_type <> 'price_tracker'::tracking_event_type OR (\nCASE\n    WHEN jsonb_typeof(value -> 'amount'::text) = 'number'::text THEN ((value ->> 'amount'::text)::numeric) >= 0::numeric\n    ELSE false\nEND AND jsonb_typeof(value -> 'currency'::text) = 'string'::text AND char_length(value ->> 'currency'::text) = 3 AND (value ->> 'currency'::text) ~ '^[A-Z]{3}$'::text) IS TRUE", name: "tracking_events_price_payload"
     t.check_constraint "jsonb_typeof(value) = 'object'::text", name: "tracking_events_value_structure"
   end

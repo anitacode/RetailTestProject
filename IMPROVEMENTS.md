@@ -111,7 +111,7 @@ Development configuration in `config/database.yml` now reads:
 
 ### Styled the import completion message
 
-- **Changed:** Successful imports display a padded, bold white `Done` badge on a green background in interactive terminals. Redirected output retains the plain `Done.` message.
+- **Changed:** Successful imports display a padded, bold white `Done` badge on a green background in interactive terminals. Redirected output retains the plain `Done :)` message.
 - **Why:** Make successful completion easier to spot after a long-running import. ANSI styling is reset immediately after the badge so subsequent terminal output keeps its normal colors.
 - **Verified:** Ruby syntax and whitespace checks passed. Import and transaction behavior are unchanged.
 

@@ -133,7 +133,7 @@ module TrackingEvents
         full, fraction = units.divmod(8)
         partial = PARTIAL_BLOCKS[fraction]
         empty = width - full - (fraction.zero? ? 0 : 1)
-        "\e[44m#{' ' * full}\e[0m\e[34m#{partial}\e[0m#{' ' * empty}"
+        "#{PASTEL.on_blue(' ' * full)}#{PASTEL.blue(partial)}#{' ' * empty}"
       else
         "#{'=' * filled}#{' ' * (width - filled)}"
       end
@@ -151,7 +151,7 @@ module TrackingEvents
       indicator = percent < 100 ? FRAMES[@frame % FRAMES.length] : " ✓ "
       line = "#{indicator} #{message}"[0, [terminal_columns - 1, 0].max]
       # Apply color after truncation so terminal escape sequences stay intact.
-      percent < 100 ? line : line.sub(/\A ✓ /, "\e[1;97;42m ✓ \e[0m")
+      percent < 100 ? line : line.sub(/\A ✓ /, PASTEL.bold.bright_white.on_green(" ✓ "))
     end
 
     def terminal_columns

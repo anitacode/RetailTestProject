@@ -31,14 +31,14 @@ class TrackingEvents::CsvImporterTest < ActiveSupport::TestCase
     assert event.updated_at.present?
   end
 
-  test "preserves boolean parsing including false payloads" do
+  test "converts legacy boolean observations to placeholder quantities" do
     rows = ["true", "TRUE", "t", "T", "1", "True", "False", "0", ""].map { |value| row(inventory: value) }
 
     assert_difference "TrackingEvent.count", 9 do
       import(rows)
     end
     assert_equal [true] * 6 + [false] * 3, TrackingEvent.order(:id).pluck(:inventory_present)
-    assert_equal ([true] * 6 + [false] * 3).map { |value| { "present" => value } },
+    assert_equal ([true] * 6 + [false] * 3).map { |value| { "quantity" => (value ? 1 : 0) } },
       TrackingEvent.order(:id).pluck(:value)
   end
 
@@ -73,7 +73,7 @@ class TrackingEvents::CsvImporterTest < ActiveSupport::TestCase
   end
 
   test "a later invalid date rolls back earlier batches and preserves existing events" do
-    existing = TrackingEvent.create!(store: @store, product: @product, event_time: Date.new(2024, 1, 1), inventory_present: true, value: { present: true })
+    existing = TrackingEvent.create!(store: @store, product: @product, event_time: Date.new(2024, 1, 1), inventory_present: true, value: { quantity: 1 })
     rows = Array.new(batch_size) { row } + [row(date: "invalid")]
 
     assert_no_difference "TrackingEvent.count" do
@@ -122,6 +122,30 @@ class TrackingEvents::CsvImporterTest < ActiveSupport::TestCase
     assert_equal ["inventory_presence"], TrackingEvent.pluck(:event_type)
   end
 
+  test "quantity CSV values take precedence over legacy presence" do
+    Tempfile.create(["quantity-import", ".csv"]) do |file|
+      file.write(CSV.generate_line(["Address", "Product Name", "Date", "Inventory Present", "Quantity"]))
+      [15, 0, -3].each do |quantity|
+        file.write(CSV.generate_line(row(inventory: "True") + [quantity]))
+      end
+      file.flush
+      TrackingEvents::CsvImporter.new(file.path).call
+      assert_equal [15, 0, -3], TrackingEvent.order(:id).map { |event| event.value["quantity"] }
+      assert_equal [true, false, false], TrackingEvent.order(:id).map(&:in_stock?)
+    end
+  end
+
+  test "malformed explicit quantity rolls back instead of falling back to presence" do
+    Tempfile.create(["quantity-import", ".csv"]) do |file|
+      file.write(CSV.generate_line(["Address", "Product Name", "Date", "Inventory Present", "Quantity"]))
+      file.write(CSV.generate_line(row + ["1.5"]))
+      file.flush
+      assert_no_difference "TrackingEvent.count" do
+        assert_raises(ArgumentError) { TrackingEvents::CsvImporter.new(file.path).call }
+      end
+    end
+  end
+
   private
 
   def batch_size
@@ -156,7 +180,7 @@ class TrackingEvents::CsvImporterTest < ActiveSupport::TestCase
       event = actual.fetch(date)
       assert_equal values, [event.store_id, event.product_id, event.inventory_present], "Incorrect CSV mapping for #{date}"
       assert_equal "inventory_presence", event.event_type, "Incorrect event type for #{date}"
-      assert_equal({ "present" => values.last }, event.value, "Incorrect JSON value for #{date}")
+      assert_equal({ "quantity" => (values.last ? 1 : 0) }, event.value, "Incorrect JSON value for #{date}")
       assert event.created_at.present?, "Missing created_at for #{date}"
       assert event.updated_at.present?, "Missing updated_at for #{date}"
     end

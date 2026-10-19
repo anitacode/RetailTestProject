@@ -88,6 +88,8 @@ GEM
     bindex (0.8.1)
     bootsnap (1.19.0)
       msgpack (~> 1.2)
+    brakeman (7.1.2)
+      racc
     builder (3.3.0)
     capybara (3.40.0)
       addressable
@@ -162,6 +164,8 @@ GEM
       racc (~> 1.4)
     nokogiri (1.18.10-x86_64-linux-gnu)
       racc (~> 1.4)
+    pastel (0.8.0)
+      tty-color (~> 0.5)
     pg (1.6.2-aarch64-linux)
     pg (1.6.2-arm64-darwin)
     pg (1.6.2-x86_64-linux)
@@ -245,6 +249,7 @@ GEM
     thor (1.4.0)
     timeout (0.4.4)
     tsort (0.2.0)
+    tty-color (0.6.0)
     turbo-rails (2.0.20)
       actionpack (>= 7.1.0)
       railties (>= 7.1.0)
@@ -272,12 +277,14 @@ PLATFORMS
 
 DEPENDENCIES
   bootsnap
+  brakeman (~> 7.0)
   capybara
   csv (~> 3.3)
   debug
   dotenv-rails (~> 3.1)
   importmap-rails
   jbuilder
+  pastel (~> 0.8)
   pg (~> 1.1)
   puma (>= 5.0)
   rails (~> 7.1.6)

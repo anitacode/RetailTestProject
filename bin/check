@@ -1,0 +1,32 @@
+#!/usr/bin/env ruby
+require "rbconfig"
+require "open3"
+
+Dir.chdir(File.expand_path("..", __dir__))
+ENV["RAILS_ENV"] = "test"
+
+def run_check(failures, *command)
+  puts "\n> #{command.join(' ')}"
+  success = system(*command)
+  failures << command.join(" ") unless success
+  success
+end
+
+puts "Checking Ruby syntax..."
+files = Dir.glob("{app,config,db,lib,test}/**/*.{rb,rake}") + %w[Gemfile Rakefile config.ru]
+files += Dir.glob("bin/*").select { |path| File.file?(path) && File.open(path) { |file| file.gets.to_s.include?("ruby") } }
+files.sort.uniq.each do |path|
+  output, status = Open3.capture2e(RbConfig.ruby, "-c", path)
+  abort "#{path}: #{output}" unless status.success?
+end
+puts "Ruby syntax passed."
+
+failures = []
+run_check(failures, "bundle", "exec", "brakeman", "--no-pager", "--quiet")
+# Unlike db:prepare, these tasks do not seed a newly created database.
+if run_check(failures, "bin/rails", "db:create", "db:migrate")
+  run_check(failures, "bin/rails", "zeitwerk:check")
+  run_check(failures, "bin/rails", "test")
+end
+abort "\nFailed checks:\n#{failures.join("\n")}" unless failures.empty?
+puts "\nAll checks passed."

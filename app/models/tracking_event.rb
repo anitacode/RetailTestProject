@@ -19,6 +19,10 @@ class TrackingEvent < ApplicationRecord
     price_tracker.where(store_id: store_id, product_id: product_id).latest_observation_first.first
   end
 
+  def in_stock?
+    inventory_presence? && value.fetch("quantity") > 0
+  end
+
   private
 
   def payload_matches_event_type
@@ -28,9 +32,11 @@ class TrackingEvent < ApplicationRecord
     end
 
     if inventory_presence?
-      unless value["present"].equal?(true) || value["present"].equal?(false)
-        errors.add(:value, "must include a boolean present")
-      end
+      quantity = value["quantity"]
+      whole_number = (quantity.is_a?(Integer) || quantity.is_a?(Float) || quantity.is_a?(BigDecimal)) &&
+        quantity.finite? && quantity == quantity.to_i
+      errors.add(:value, "must include a finite whole-number quantity") unless whole_number
+      errors.add(:value, "must not include present; stock status is derived from quantity") if value.key?("present")
     elsif price_tracker?
       amount = value["amount"]
       unless (amount.is_a?(Integer) || amount.is_a?(Float) || amount.is_a?(BigDecimal)) && amount.finite? && amount >= 0

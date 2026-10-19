@@ -11,7 +11,7 @@ class TrackingEventTest < ActiveSupport::TestCase
   end
 
   test "existing default categorizes new events as inventory presence" do
-    event = TrackingEvent.create!(store: @store, product: @product, value: { present: false })
+    event = TrackingEvent.create!(store: @store, product: @product, value: { quantity: 0 })
 
     assert_equal "inventory_presence", event.reload.event_type
     assert event.inventory_presence?
@@ -32,7 +32,7 @@ class TrackingEventTest < ActiveSupport::TestCase
   end
 
   test "database rejects unknown and null event types" do
-    event = TrackingEvent.create!(store: @store, product: @product, value: { present: false })
+    event = TrackingEvent.create!(store: @store, product: @product, value: { quantity: 0 })
     { "'unknown'" => PG::InvalidTextRepresentation, "NULL" => PG::NotNullViolation }.each do |value, error_class|
       error = assert_raises(ActiveRecord::StatementInvalid) do
         TrackingEvent.transaction(requires_new: true) do
@@ -44,16 +44,21 @@ class TrackingEventTest < ActiveSupport::TestCase
     assert event.reload.inventory_presence?
   end
 
-  test "inventory accepts both boolean observations" do
-    [true, false].each do |present|
-      event = TrackingEvent.create!(store: @store, product: @product, value: { present: present })
-      assert_equal({ "present" => present }, event.reload.value)
+  test "inventory quantity determines stock status including zero and negatives" do
+    [-5, 0, 1, 15, 2.0].each do |quantity|
+      event = TrackingEvent.create!(store: @store, product: @product, value: { quantity: quantity })
+      assert_equal quantity > 0, event.reload.in_stock?
+      TrackingEvent.insert_all!([{ store_id: @store.id, product_id: @product.id,
+        event_type: "inventory_presence", value: { quantity: quantity } }])
     end
   end
 
-  test "inventory rejects missing null and nonboolean observations in Rails and bulk inserts" do
-    [nil, [], {}, { present: nil }, { present: "false" }, { present: 0 }].each do |payload|
+  test "inventory rejects missing malformed and redundant payloads in Rails and bulk inserts" do
+    [nil, [], {}, { present: true }, { quantity: 1, present: false }].each do |payload|
       assert_invalid_payload(:inventory_presence, payload)
+    end
+    [nil, 1.5, "2", true, [], {}, Float::NAN, Float::INFINITY].each do |quantity|
+      assert_invalid_payload(:inventory_presence, { quantity: quantity })
     end
   end
 
@@ -77,17 +82,17 @@ class TrackingEventTest < ActiveSupport::TestCase
     end
   end
 
-  test "bulk inserts accept false and zero" do
+  test "bulk inserts accept zero inventory and price" do
     TrackingEvent.insert_all!([
-      { store_id: @store.id, product_id: @product.id, event_type: "inventory_presence", value: { present: false } },
+      { store_id: @store.id, product_id: @product.id, event_type: "inventory_presence", value: { quantity: 0 } },
       { store_id: @store.id, product_id: @product.id, event_type: "price_tracker", value: { amount: 0, currency: "USD" } }
     ])
-    assert_equal false, TrackingEvent.inventory_presence.last.value["present"]
+    assert_equal 0, TrackingEvent.inventory_presence.last.value["quantity"]
     assert_equal 0, TrackingEvent.price_tracker.last.value["amount"]
   end
 
   test "payload must remain valid when the event category changes" do
-    event = TrackingEvent.create!(store: @store, product: @product, value: { present: false })
+    event = TrackingEvent.create!(store: @store, product: @product, value: { quantity: 0 })
     refute event.update(event_type: :price_tracker)
     assert_raises(ActiveRecord::StatementInvalid) do
       TrackingEvent.transaction(requires_new: true) { event.update_columns(event_type: "price_tracker") }

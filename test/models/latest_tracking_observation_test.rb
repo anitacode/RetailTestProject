@@ -19,11 +19,11 @@ class LatestTrackingObservationTest < ActiveSupport::TestCase
   end
 
   test "inventory-only history preserves false without inventing a price" do
-    observe(:inventory_presence, @time - 1, { present: true })
-    current = observe(:inventory_presence, @time, { present: false })
+    observe(:inventory_presence, @time - 1, { quantity: 1 })
+    current = observe(:inventory_presence, @time, { quantity: 0 })
 
     assert_equal current, latest_inventory
-    assert_equal false, latest_inventory.value["present"]
+    assert_equal 0, latest_inventory.value["quantity"]
     assert_nil latest_price
   end
 
@@ -37,12 +37,12 @@ class LatestTrackingObservationTest < ActiveSupport::TestCase
   end
 
   test "interleaved histories advance independently" do
-    inventory = observe(:inventory_presence, @time, { present: false })
+    inventory = observe(:inventory_presence, @time, { quantity: 0 })
     price = observe(:price_tracker, @time + 1, { amount: 12.5, currency: "USD" })
     assert_equal inventory, latest_inventory
     assert_equal price, latest_price
 
-    inventory = observe(:inventory_presence, @time + 2, { present: true })
+    inventory = observe(:inventory_presence, @time + 2, { quantity: 1 })
     assert_equal inventory, latest_inventory
     assert_equal price, latest_price
 
@@ -52,10 +52,10 @@ class LatestTrackingObservationTest < ActiveSupport::TestCase
   end
 
   test "older bulk observations inserted later do not become current" do
-    inventory = observe(:inventory_presence, @time, { present: false })
+    inventory = observe(:inventory_presence, @time, { quantity: 0 })
     price = observe(:price_tracker, @time, { amount: 12, currency: "USD" })
     TrackingEvent.insert_all!([
-      attributes(:inventory_presence, @time - 1, { present: true }),
+      attributes(:inventory_presence, @time - 1, { quantity: 1 }),
       attributes(:price_tracker, @time - 1, { amount: 99, currency: "USD" })
     ])
 
@@ -64,7 +64,7 @@ class LatestTrackingObservationTest < ActiveSupport::TestCase
   end
 
   test "CSV imported later cannot supersede a newer inventory observation or price" do
-    inventory = observe(:inventory_presence, @time, { present: false })
+    inventory = observe(:inventory_presence, @time, { quantity: 0 })
     price = observe(:price_tracker, @time, { amount: 12, currency: "USD" })
     Tempfile.create(["older-observations", ".csv"]) do |file|
       file.write(CSV.generate_line(["Address", "Product Name", "Date", "Inventory Present"]))
@@ -78,8 +78,8 @@ class LatestTrackingObservationTest < ActiveSupport::TestCase
   end
 
   test "equal observation times select the greater id independently" do
-    observe(:inventory_presence, @time, { present: true })
-    inventory = observe(:inventory_presence, @time, { present: false })
+    observe(:inventory_presence, @time, { quantity: 1 })
+    inventory = observe(:inventory_presence, @time, { quantity: 0 })
     observe(:price_tracker, @time, { amount: 12, currency: "USD" })
     price = observe(:price_tracker, @time, { amount: 10, currency: "USD" })
 
@@ -88,12 +88,12 @@ class LatestTrackingObservationTest < ActiveSupport::TestCase
   end
 
   test "observations are isolated by both store and product" do
-    inventory = observe(:inventory_presence, @time, { present: false })
+    inventory = observe(:inventory_presence, @time, { quantity: 0 })
     price = observe(:price_tracker, @time, { amount: 12, currency: "USD" })
     other_store = Store.create!(address: "Other observation store")
     other_product = Product.create!(name: "Other observation product", brand: @product.brand)
     [:inventory_presence, :price_tracker].each do |type|
-      payload = type == :inventory_presence ? { present: true } : { amount: 99, currency: "USD" }
+      payload = type == :inventory_presence ? { quantity: 1 } : { amount: 99, currency: "USD" }
       TrackingEvent.create!(attributes(type, @time + 1, payload).merge(store_id: other_store.id))
       TrackingEvent.create!(attributes(type, @time + 1, payload).merge(product_id: other_product.id))
     end
@@ -103,20 +103,20 @@ class LatestTrackingObservationTest < ActiveSupport::TestCase
   end
 
   test "undated observations never become current" do
-    observe(:inventory_presence, nil, { present: true })
+    observe(:inventory_presence, nil, { quantity: 1 })
     observe(:price_tracker, nil, { amount: 99, currency: "USD" })
     assert_nil latest_inventory
     assert_nil latest_price
-    inventory = observe(:inventory_presence, @time, { present: false })
+    inventory = observe(:inventory_presence, @time, { quantity: 0 })
     price = observe(:price_tracker, @time, { amount: 12, currency: "USD" })
     assert_equal inventory, latest_inventory
     assert_equal price, latest_price
   end
 
   test "invalid later payloads cannot displace valid observations" do
-    inventory = observe(:inventory_presence, @time, { present: false })
+    inventory = observe(:inventory_presence, @time, { quantity: 0 })
     price = observe(:price_tracker, @time, { amount: 12, currency: "USD" })
-    [[:inventory_presence, { present: nil }], [:price_tracker, { amount: -1, currency: "USD" }]].each do |type, payload|
+    [[:inventory_presence, { quantity: nil }], [:price_tracker, { amount: -1, currency: "USD" }]].each do |type, payload|
       values = attributes(type, @time + 1, payload)
       refute TrackingEvent.new(values).valid?
       assert_raises(ActiveRecord::StatementInvalid) do

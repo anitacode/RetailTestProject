@@ -24,7 +24,8 @@ module TrackingEvents
             product_id = product_ids[row["Product Name"]]
             break if !store_id || !product_id
 
-            inventory_present = cast_boolean(row["Inventory Present"])
+            quantity = row.headers.include?("Quantity") ? Integer(row["Quantity"], 10) : (cast_boolean(row["Inventory Present"]) ? 1 : 0)
+            inventory_present = quantity > 0
 
             events << {
               event_type: "inventory_presence",
@@ -32,7 +33,7 @@ module TrackingEvents
               product_id:,
               event_time: Date.parse(row["Date"]),
               inventory_present:,
-              value: { present: inventory_present }
+              value: { quantity: quantity }
             }
           end
 

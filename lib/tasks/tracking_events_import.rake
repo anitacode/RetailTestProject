@@ -42,6 +42,6 @@ namespace :tracking_events do
 
     progress.finish(**result)
     puts
-    puts($stdout.tty? ? "\e[1;97;42m Done :) \e[0m" : "Done.")
+    puts PASTEL.bold.bright_white.on_green("Done :)")
   end
 end

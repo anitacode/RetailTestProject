@@ -24,7 +24,7 @@
     <% @store.tracking_events.each do |event| %>
       <tr>
         <td><%= event.event_time&.strftime("%Y-%m-%d %H:%M") %></td>
-        <td><%= event.inventory_present ? "Yes" : "No" %></td>
+        <td><%= event.in_stock? ? "Yes" : "No" %></td>
         <td><%= link_to event.product.name, product_path(event.product) %></td>
         <td><%= event.product.brand&.name %></td>
       </tr>

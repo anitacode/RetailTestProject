@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+require "rbconfig"
+require "open3"
+
+Dir.chdir(File.expand_path("..", __dir__))
+
+puts "Checking Ruby syntax..."
+files = Dir.glob("{app,config,db,lib,test}/**/*.{rb,rake}") + %w[Gemfile Rakefile config.ru]
+files += Dir.glob("bin/*").select { |path| File.file?(path) && File.open(path) { |file| file.gets.to_s.include?("ruby") } }
+files.sort.uniq.each do |path|
+  output, status = Open3.capture2e(RbConfig.ruby, "-c", path)
+  abort "#{path}: #{output}" unless status.success?
+end
+puts "Ruby syntax passed."

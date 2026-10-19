@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 require "rbconfig"
-require "open3"
 
 Dir.chdir(File.expand_path("..", __dir__))
 ENV["RAILS_ENV"] = "test"
@@ -12,16 +11,8 @@ def run_check(failures, *command)
   success
 end
 
-puts "Checking Ruby syntax..."
-files = Dir.glob("{app,config,db,lib,test}/**/*.{rb,rake}") + %w[Gemfile Rakefile config.ru]
-files += Dir.glob("bin/*").select { |path| File.file?(path) && File.open(path) { |file| file.gets.to_s.include?("ruby") } }
-files.sort.uniq.each do |path|
-  output, status = Open3.capture2e(RbConfig.ruby, "-c", path)
-  abort "#{path}: #{output}" unless status.success?
-end
-puts "Ruby syntax passed."
-
 failures = []
+run_check(failures, RbConfig.ruby, "bin/check-syntax")
 run_check(failures, "npm", "run", "format:check")
 run_check(failures, "npm", "test")
 run_check(failures, "npm", "run", "build")

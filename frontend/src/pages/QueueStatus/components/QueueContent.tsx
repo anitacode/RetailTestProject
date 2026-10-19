@@ -1,7 +1,7 @@
 import InfoMessage from "@/ui/InfoMessage";
 import Pagination from "@/component/Pagination";
 import JobTable from "@/pages/QueueStatus/components/JobTable";
-import type { JobsResponse } from "@/pages/QueueStatus/queries";
+import type { JobsResponse } from "@/pages/QueueStatus/types";
 
 interface QueueContentProps {
   data: JobsResponse | undefined;

@@ -1,7 +1,7 @@
-import type { TrackingEvent } from "@/types";
+import type { TrackingEvent } from "@/pages/TrackingEvents/types";
 import { observationValue, observationTime } from "@/pages/TrackingEvents/utils";
 
-import type { ObservedOrder } from "@/pages/TrackingEvents/utils";
+import type { ObservedOrder } from "@/pages/TrackingEvents/types";
 
 const eventLabels = { price_tracker: "Price", inventory_presence: "Inventory" };
 

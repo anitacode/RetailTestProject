@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import { expect, it, vi } from "vitest";
 import App from "@/App";
 import { createQueryClient } from "@/queryClient";
-import type { Contact, ContactInput } from "@/types";
+import type { Contact, ContactInput } from "@/pages/NotificationSettings/types";
 
 const session = { brand: { id: 1, name: "Demo brand" }, csrf_token: "token" };
 const response = (data: unknown, status = 200) =>

@@ -1,4 +1,4 @@
-import type { ContactPreferences, ContactInput } from "@/types";
+import type { ContactPreferences, ContactInput } from "@/pages/NotificationSettings/types";
 
 export function contactFormInput(
   name: string,

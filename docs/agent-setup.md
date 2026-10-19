@@ -59,32 +59,16 @@ as described in the root README, then run:
 bin/check
 ```
 
-The command forces `RAILS_ENV=test`. Syntax errors stop execution immediately;
-other failures are collected so a security finding does not hide test results:
+The command forces `RAILS_ENV=test` and collects failures across Ruby syntax,
+RuboCop/Prettier formatting, Vitest, TypeScript/build, Brakeman, test database
+preparation (without seeds), Zeitwerk, and Minitest. Tests are skipped if database
+preparation fails. Never configure the test database to use real application data.
+Focused iteration uses `bin/rails test path/to/test.rb` or `npm test`.
 
-1. Ruby syntax lint for source, tests, migrations, tasks, and Ruby executables.
-2. Brakeman static security analysis using the locked gem version.
-3. Test database creation/migration (without seeds), Rails Zeitwerk loading
-   validation, and Minitest tests. Tests are skipped if database preparation fails.
+GitHub Actions runs independent Rails tests, Vitest, Brakeman, RuboCop, and Frontend
+formatting and build jobs. Only Rails tests needs PostgreSQL. Configure branch
+protection with these job names if passing checks are required before merging.
 
-The test database is disposable; never configure it to use real application data.
-The command does not run the destructive demo seed script or import the million-row CSV.
-Focused iteration still uses `bin/rails test path/to/test.rb`.
-
-The GitHub Actions workflow runs the same command on pushes and pull requests with
-a disposable PostgreSQL service. It becomes active when these files are pushed.
-To make passing checks a merge requirement, configure a GitHub branch rule requiring
-`Rails checks` after the first workflow run. No remote branch settings are changed
-by this setup.
-
-This baseline has syntax lint, not a Ruby style policy, and no static type checker:
-the app currently has neither RuboCop configuration nor type signatures. Brakeman
-is a static Rails security scan, not a complete dependency advisory audit or security
-guarantee. Add broader checks deliberately rather than claiming unsupported coverage.
-
-## Initial security finding
-
-On 2026-10-19, Brakeman reported an existing `EOLRails` warning for the locked
-Rails 7.1.6 dependency. The check intentionally fails until this is addressed;
-no ignore rule was added. Upgrading Rails should be handled as a separate,
-tested compatibility change. The CI setup itself does not upgrade the application.
+Brakeman is a static security scan, not a complete dependency advisory audit.
+The original Rails 7.1.6 end-of-support warning was resolved by upgrading to
+Rails 8.1.4; no ignore rule or disabled check was added.

@@ -1,8 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
 import { request } from "@/api";
-import type { TrackingEventsResponse } from "@/types";
+import type { TrackingEventsResponse } from "@/pages/TrackingEvents/types";
 
-import type { ObservedOrder } from "@/pages/TrackingEvents/utils";
+import type { ObservedOrder } from "@/pages/TrackingEvents/types";
 
 export const trackingEventsQuery = (brandId: number, page: number, order: ObservedOrder = "desc") =>
   queryOptions({

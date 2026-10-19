@@ -1,5 +1,5 @@
 import { ApiError, errorMessage } from "@/api";
-import type { AlertType } from "@/types";
+import type { AlertType } from "@/pages/AlertList/types";
 
 export const observationTags = {
   alert_price_change: ["PREVIOUS PRICE", "NEW PRICE"],

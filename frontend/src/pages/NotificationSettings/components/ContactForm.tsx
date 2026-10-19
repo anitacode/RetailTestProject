@@ -3,7 +3,7 @@ import { contactFormInput, maskPhone } from "@/pages/NotificationSettings/utils"
 import { useId, useState, type ReactNode, type SubmitEvent } from "react";
 import { useSaveContact } from "@/pages/NotificationSettings/queries";
 import { errorMessage } from "@/api";
-import type { Contact } from "@/types";
+import type { Contact } from "@/pages/NotificationSettings/types";
 
 interface ContactFormProps {
   brandId: number;

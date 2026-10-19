@@ -6,7 +6,8 @@ import { MemoryRouter } from "react-router-dom";
 import App from "@/App";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createQueryClient } from "@/queryClient";
-import type { Brand, InventoryAlert, PriceAlert } from "@/types";
+import type { Brand } from "@/types";
+import type { InventoryAlert, PriceAlert } from "@/pages/AlertList/types";
 
 const brand: Brand = { id: 1, name: "The Prancing Pony" };
 const alert: InventoryAlert = {

@@ -1,7 +1,5 @@
 import { dateTime } from "@/api";
-import type { TrackingEvent } from "@/types";
-
-export type ObservedOrder = "asc" | "desc";
+import type { TrackingEvent } from "@/pages/TrackingEvents/types";
 
 export function observationValue(event: TrackingEvent): string {
   if (event.event_type === "price_tracker") {

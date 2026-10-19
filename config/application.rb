@@ -8,7 +8,7 @@ Bundler.require(*Rails.groups)
 
 module RetailTestProject
   class Application < Rails::Application
-    # Initialize configuration defaults for originally generated Rails version.
+    # Preserve existing behavior while upgrading Rails; adopt newer defaults separately.
     config.load_defaults 7.1
 
     # Please, add to the `ignore` list any other `lib` subdirectories that do

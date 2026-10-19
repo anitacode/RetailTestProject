@@ -1,7 +1,7 @@
 import AlertTypeBadge from "@/ui/AlertTypeBadge";
 import { Link } from "react-router-dom";
 import { dateTime } from "@/api";
-import type { Alert } from "@/types";
+import type { Alert } from "@/pages/AlertList/types";
 
 interface AlertRowProps {
   alert: Alert;

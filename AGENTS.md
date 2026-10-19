@@ -62,15 +62,15 @@ Repository conventions take precedence over generic examples in that skill: use 
 
 ### Architecture and imports
 
-- The React/Vite frontend uses strict TypeScript under `frontend/src/`. Use `.ts`/`.tsx` for frontend changes and keep API response types in `frontend/src/types.ts` aligned with Rails responses. Run `npm run typecheck`; production builds enforce this check too.
+- The React/Vite frontend uses strict TypeScript under `frontend/src/`. Use `.ts`/`.tsx` for frontend changes and keep API response types aligned with Rails responses in the owning page’s `types.ts`. Reserve `frontend/src/types.ts` for global contracts such as Brand, SessionResponse, and Pagination. Run `npm run typecheck`; production builds enforce this check too.
 - Always use absolute alias imports for local frontend modules; never use `./` or `../` imports. Use `@/component/Dialog` for shared components in `frontend/component/`, and `@/api`, `@/pages/AlertList/queries`, `@/components/Feedback`, etc. for `frontend/src/`. This includes type imports, stylesheet imports, re-exports, dynamic imports, and test mocks. Keep Vite/Vitest aliases and TypeScript paths aligned. External packages retain their package names; configuration filesystem paths are not module imports.
 
 - Use `@/ui/Badge` for the shared Badge in `frontend/components/`; the `@/ui/*` alias maps to this directory without conflicting with existing `@/components/Feedback` imports.
 
 - Use Tailwind named responsive variants (`md:`, `lg:`, `max-md:`, `max-lg:`, `2xl:`) with the standard theme breakpoints instead of arbitrary pixel breakpoints such as `max-[760px]:`. Use `max-*` when styling below a breakpoint; unprefixed `md:`/`lg:` apply at and above it.
 
-- Organize each page under `frontend/src/pages/<PageName>/`, with `<PageName>.tsx`, page-owned `components/`, `queries.ts`, and `utils.ts`. Keep page-specific queries, mutations, presentation helpers, and components inside that directory; use absolute imports such as `@/pages/AlertList/components/AlertRow`. Colocate page-specific tests there too.
-- Keep reusable layout/UI components (Dialog, Pagination, Header, SideMenu), API transport/types, session handling, and query-client/cache-key infrastructure shared. Shared code must not depend on page modules. Do not duplicate shared logic to fill a page folder.
+- Organize each page under `frontend/src/pages/<PageName>/`, with `<PageName>.tsx`, page-owned `components/`, `queries.ts`, `utils.ts`, and `types.ts`. Keep page-specific queries, mutations, presentation helpers, and components inside that directory; use absolute imports such as `@/pages/AlertList/components/AlertRow`. Colocate page-specific tests there too.
+- Keep reusable layout/UI components (Dialog, Pagination, Header, SideMenu), API transport/types, session handling, and query-client/cache-key infrastructure shared. Shared runtime code must not depend on page implementations; type-only imports of feature contracts are allowed when needed (for example, AlertTypeBadge uses AlertList/types). Do not duplicate shared logic to fill a page folder.
 
 ### Data fetching and React guidance
 

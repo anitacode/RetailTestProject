@@ -21,20 +21,30 @@ const variants = {
 
 interface InfoMessageProps {
   title?: string;
+  compact?: boolean;
   message: string;
   variant: BadgeVariant;
 }
 
-export default function InfoMessage({ title, message, variant }: InfoMessageProps) {
+export default function InfoMessage({
+  title,
+  message,
+  variant,
+  compact = false,
+}: InfoMessageProps) {
   const { colors, icon } = variants[variant];
 
   return (
     <div
       role={variant === "error" ? "alert" : "status"}
-      className="m-auto flex max-w-127.5 flex-col items-center px-6 py-15 text-center"
+      className={
+        compact
+          ? `mb-2 flex shrink-0 items-center gap-3 rounded-lg border p-2 text-left ${colors}`
+          : "m-auto flex max-w-127.5 flex-col items-center px-6 py-15 text-center"
+      }
     >
       <span
-        className={`mb-4.5 inline-grid h-11 w-11 shrink-0 place-items-center rounded-full border ${colors}`}
+        className={`inline-grid shrink-0 place-items-center rounded-full border ${colors} ${compact ? "h-8 w-8" : "mb-4.5 h-11 w-11"}`}
       >
         <svg
           aria-hidden="true"
@@ -50,8 +60,26 @@ export default function InfoMessage({ title, message, variant }: InfoMessageProp
           {icon}
         </svg>
       </span>
-      {title && <h3 className="mb-2.5 text-base wrap-anywhere">{title}</h3>}
-      <p className="m-0 min-w-0 text-base wrap-anywhere text-slate-500">{message}</p>
+      <div className="min-w-0">
+        {title && (
+          <h3
+            className={
+              compact
+                ? "mb-1 text-sm font-semibold wrap-anywhere"
+                : "mb-2.5 text-base wrap-anywhere"
+            }
+          >
+            {title}
+          </h3>
+        )}
+        <p
+          className={
+            compact ? "m-0 text-sm wrap-anywhere" : "m-0 text-base wrap-anywhere text-slate-500"
+          }
+        >
+          {message}
+        </p>
+      </div>
     </div>
   );
 }

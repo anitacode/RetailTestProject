@@ -1,7 +1,8 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { request } from "@/api";
 import { sessionKey } from "@/queryKeys";
-import type { Contact, ContactInput, ContactsResponse, SessionResponse } from "@/types";
+import type { Contact, ContactInput, ContactsResponse } from "@/pages/NotificationSettings/types";
+import type { SessionResponse } from "@/types";
 
 export const contactsQuery = (brandId: number, page: number, keyword = "") =>
   queryOptions({

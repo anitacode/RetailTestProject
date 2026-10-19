@@ -1,5 +1,5 @@
 import ContactRow from "@/pages/NotificationSettings/components/ContactRow";
-import type { Contact } from "@/types";
+import type { Contact } from "@/pages/NotificationSettings/types";
 
 interface ContactTableProps {
   contacts: Contact[];

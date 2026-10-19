@@ -1,23 +1,8 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { request } from "@/api";
 import { sessionKey } from "@/queryKeys";
-import type { AlertsResponse, SessionResponse } from "@/types";
-
-export interface QueuedJob {
-  id: string;
-  job_class: string;
-  queue: string;
-  status: "queued" | "scheduled" | "running" | "retrying" | "completed" | "failed";
-  attempts: number;
-  created_at: string;
-  scheduled_at: string | null;
-  finished_at: string | null;
-}
-
-export interface JobsResponse {
-  jobs: QueuedJob[];
-  pagination: AlertsResponse["pagination"];
-}
+import type { SessionResponse } from "@/types";
+import type { JobsResponse } from "@/pages/QueueStatus/types";
 
 export const jobsQuery = (brandId: number, page: number) =>
   queryOptions({

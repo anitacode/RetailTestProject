@@ -4,7 +4,8 @@ Current implementation summary. `README.md` preserves the original assignment; s
 
 ## Tracking and data integrity
 
-- Upgraded Ruby to **3.4.11**; retained Rails **7.1.6** and PostgreSQL. Added explicit CSV and dotenv dependencies.
+- Upgraded Ruby to **3.4.11** and Rails to **8.1.4**, retaining PostgreSQL. Added explicit CSV and dotenv dependencies.
+- Updated Rails dependencies and regenerated the schema dump; removed the Rails 7.1 JSON compatibility pin. Kept `config.load_defaults 7.1` to preserve behavior while newer defaults are reviewed separately.
 - Separated inventory and price observations using event types and JSONB payloads.
 - Inventory uses `{ quantity: N }`: whole numbers; positive means in stock, zero/negative means out of stock.
 - Price uses `{ amount: N, currency: "USD" }`: nonnegative amount and uppercase three-letter currency.
@@ -49,9 +50,9 @@ Current implementation summary. `README.md` preserves the original assignment; s
 - Built a React, Vite, TypeScript, Tailwind, and React Query workspace with a teal/slate palette.
 - Added alert list/detail, notification settings, queue status, and tracking-event history pages.
 - Added selected sidebar navigation and shared session access through `useBrand`.
-- Organized pages into their own directories with local components, queries, and utilities; standardized absolute imports.
+- Organized pages into their own directories with local components, queries, utilities, and feature types; standardized absolute imports. Global types are limited to shared brand/session/pagination contracts.
 - Extracted reusable forms, rows, pagination, dialogs, badges, and feedback components.
-- Unified errors and empty states with centered `InfoMessage`, supporting an optional title and error/info/warning/success variants.
+- Unified errors, empty states, and contact-save confirmations with centered `InfoMessage`, supporting an optional title, compact horizontal layout, and error/info/warning/success variants.
 - Replaced nested rendering ternaries with early returns in page content; removed duplicate legacy implementations.
 - Added scrollable tables, sticky headers, persistent pagination, and named responsive breakpoints.
 - Added tracking-event date sorting across pages, with stable ID ordering, undated rows last, and URL-preserved direction.
@@ -97,8 +98,8 @@ npm test
 
 ## Verification and limitations
 
-- Latest local verification: **109 Rails tests / 50,890 assertions** and **45 frontend tests** passed, plus formatting, Ruby syntax, Zeitwerk, TypeScript, and production frontend build.
-- **Brakeman still fails because Rails 7.1.6 is unsupported.** The security check remains enabled; a Rails upgrade is outstanding.
+- Latest local verification: **109 Rails tests / 50,890 assertions** and **45 frontend tests** passed, plus formatting, Ruby syntax, Zeitwerk, TypeScript, production frontend build, and production-mode eager loading on Rails 8.1.4.
+- **Brakeman passes with zero warnings** after the Rails 8.1.4 upgrade; no checks were disabled. Rails 8.1 has [security support through October 2027](https://rubyonrails.org/maintenance).
 - Split CI configuration was validated locally; GitHub execution requires the next push. Update branch protection if it requires the old “Rails checks” status.
 - Brand-name login is demo access without identity verification; read state is shared by the brand.
 - New tracking records trigger jobs; editing existing records does not. The worker must be running.
@@ -106,4 +107,4 @@ npm test
 - Imports are not deduplicated on rerun. Ambiguous store addresses and strict legacy-boolean parsing remain follow-ups.
 - Currency/phone checks validate format, not real-world validity. Phone search uses stored international text.
 - Large-history counts, sorting, and deep offset pagination can be expensive; no full-million-row timing benchmark was completed.
-- Docker image builds and real-browser layout/focus checks were not verified. Revisit Rails/connection_pool compatibility before enabling Redis caching.
+- Docker image builds and real-browser layout/focus checks were not verified. Redis caching remains unconfigured and untested.

@@ -1,4 +1,4 @@
-import type { Contact } from "@/types";
+import type { Contact } from "@/pages/NotificationSettings/types";
 
 export default function ContactRow({ contact, onEdit }: { contact: Contact; onEdit: () => void }) {
   return (

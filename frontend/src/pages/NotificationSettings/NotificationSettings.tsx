@@ -1,3 +1,4 @@
+import InfoMessage from "@/ui/InfoMessage";
 import { useNavigate, useParams } from "react-router-dom";
 import ContactEditDialog from "@/pages/NotificationSettings/components/ContactEditDialog";
 import { useEffect, useState } from "react";
@@ -63,11 +64,7 @@ export default function NotificationSettings({ brandId }: { brandId: number }) {
           }}
         />
       )}
-      {saved && (
-        <p role="status" className="shrink-0 rounded-lg bg-teal-50 p-3 text-sm text-teal-800">
-          Contact saved.
-        </p>
-      )}
+      {saved && <InfoMessage message="Contact saved." variant="success" compact />}
       {creating && !contactId && (
         <ContactCreateDialog
           brandId={brandId}

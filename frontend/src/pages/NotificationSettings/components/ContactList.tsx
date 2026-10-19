@@ -4,7 +4,7 @@ import Pagination from "@/component/Pagination";
 import ContactTable from "@/pages/NotificationSettings/components/ContactTable";
 import InfoMessage from "@/ui/InfoMessage";
 import { contactsQuery } from "@/pages/NotificationSettings/queries";
-import type { Contact } from "@/types";
+import type { Contact } from "@/pages/NotificationSettings/types";
 
 interface ContactListProps {
   brandId: number;

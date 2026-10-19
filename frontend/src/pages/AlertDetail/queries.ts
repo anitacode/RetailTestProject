@@ -1,7 +1,8 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { request } from "@/api";
 import { sessionKey, alertsKey } from "@/queryKeys";
-import type { AlertResponse, SessionResponse } from "@/types";
+import type { AlertResponse } from "@/pages/AlertDetail/types";
+import type { SessionResponse } from "@/types";
 
 export const alertQuery = (brandId: number, id: string) =>
   queryOptions({

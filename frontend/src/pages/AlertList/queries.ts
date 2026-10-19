@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { request } from "@/api";
 import { alertsKey } from "@/queryKeys";
-import type { AlertsResponse } from "@/types";
+import type { AlertsResponse } from "@/pages/AlertList/types";
 
 export const alertsQuery = (brandId: number, page: string) =>
   queryOptions({

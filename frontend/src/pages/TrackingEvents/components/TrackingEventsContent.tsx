@@ -4,7 +4,7 @@ import { errorMessage } from "@/api";
 import { trackingEventsQuery } from "@/pages/TrackingEvents/queries";
 import TrackingEventsTable from "@/pages/TrackingEvents/components/TrackingEventsTable";
 
-import type { ObservedOrder } from "@/pages/TrackingEvents/utils";
+import type { ObservedOrder } from "@/pages/TrackingEvents/types";
 import InfoMessage from "@/ui/InfoMessage";
 
 interface Props {

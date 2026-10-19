@@ -6,7 +6,7 @@ ruby "3.4.11"
 gem "dotenv-rails", "~> 3.1"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 7.1.6"
+gem "rails", "~> 8.1.0"
 
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
 gem "sprockets-rails"
@@ -16,8 +16,6 @@ gem "pg", "~> 1.1"
 
 # CSV is a bundled gem in Ruby 3.4 and must be declared for the importer.
 gem "csv", "~> 3.3"
-# Rails 7.1 passes JSON options removed in JSON 3.
-gem "json", "~> 2.0"
 gem "pastel", "~> 0.8"
 
 # Use the Puma web server [https://github.com/puma/puma]

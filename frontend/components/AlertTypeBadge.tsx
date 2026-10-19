@@ -1,5 +1,5 @@
 import Badge, { type BadgeVariant } from "@/ui/Badge";
-import type { AlertType } from "@/types";
+import type { AlertType } from "@/pages/AlertList/types";
 
 const alertTypes = {
   alert_no_inventory: { label: "Inventory alert", variant: "warning" },

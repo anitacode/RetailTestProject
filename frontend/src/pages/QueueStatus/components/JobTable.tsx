@@ -1,4 +1,4 @@
-import type { QueuedJob } from "@/pages/QueueStatus/queries";
+import type { QueuedJob } from "@/pages/QueueStatus/types";
 import { jobTime } from "@/pages/QueueStatus/utils";
 
 interface JobTableProps {
